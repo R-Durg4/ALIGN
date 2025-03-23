@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise Session</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Exercise Session Started</h1>
+    <div class="message">
+        <p>Your exercise program is running in a new window.</p>
+        <p>Please check your system for the exercise window.</p>
+    </div>
+    <div class="controls">
+        <a href="{{ url_for('main_menu') }}" class="menu-button">Back to Main Menu</a>
+    </div>
+</body>
+</html>

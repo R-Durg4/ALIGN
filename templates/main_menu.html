@@ -1,0 +1,46 @@
+<!-- main_menu.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fitness App - Main Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .menu-button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 250px;
+            text-align: center;
+            text-decoration: none;
+        }
+        .menu-button:hover {
+            background-color: #45a049;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fitness App - Main Menu</h1>
+    <a href="{{ url_for('select_exercise') }}" class="menu-button">START EXERCISE</a>
+    <a href="#" class="menu-button">VIEW PROGRESS</a>
+    <a href="#" class="menu-button">SETTINGS</a>
+    <a href="{{ url_for('login') }}" class="menu-button">LOGOUT</a>
+</body>
+</html>

@@ -1,0 +1,50 @@
+body {
+    font-family: Arial, sans-serif;
+    background-image: url('https://mybayutcdn.bayut.com/mybayut/wp-content/uploads/Online-libraries-in-UAE-B-13-09.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+form {
+    margin-top: 50px;
+    text-align: center;
+}
+form input[type="text"], form input[type="date"] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    box-sizing: border-box;
+}
+form input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+form input[type="submit"]:hover {
+    opacity: 0.8;
+}
+#menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+#menu a {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    text-decoration: none;
+    width: 200px;
+    text-align: center;
+    border-radius: 5px;
+}
+#menu a:hover {
+    opacity: 0.8;
+}
+h1 {
+    text-align: center;
+    color: #4CAF50;
+}
