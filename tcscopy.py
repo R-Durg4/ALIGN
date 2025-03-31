@@ -1,53 +1,14 @@
-#old reference code
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import models
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, GlobalAveragePooling2D, Input
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, GlobalAveragePooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import os
 import mediapipe as mp
 import time
-import sys
-
-def load_model_safely(model_path):
-    try:
-        # First attempt - standard loading
-        print(f"Attempting to load model from {model_path}")
-        model = tf.keras.models.load_model(model_path)
-        print("Model loaded successfully with standard method")
-        return model
-    except Exception as e:
-        print(f"Standard loading failed: {e}")
-        try:
-            # Second attempt - with custom object scope
-            with tf.keras.utils.custom_object_scope({}):
-                model = tf.keras.models.load_model(model_path, compile=False)
-                print("Model loaded successfully with custom_object_scope")
-                return model
-        except Exception as e:
-            print(f"Second attempt failed: {e}")
-            # If we can't load the model, build a new one
-            print("Building new model instead of loading")
-            return None
-
-#added for rep counter
-class ExerciseTracker:
-    def __init__(self):
-        self.rep_counter = 20  # Default reps
-    
-    def reset_rep_counter(self):
-        """Reset rep counter to 20."""
-        self.rep_counter = 20
-        print("Rep counter reset to 20")
-
-# Create a global instance of ExerciseTracker to use in app.py
-exercise_instance = ExerciseTracker()
-
 
 class FitnessPostureCorrection:
     def __init__(self, model_path=None):
@@ -59,40 +20,26 @@ class FitnessPostureCorrection:
             min_tracking_confidence=0.5
         )
         self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing_styles = mp.solutions.drawing_styles
 
-        # Initialize exercise types first - moved up in initialization order
-        self.exercise_types = ['benchpress', 'deadlift', 'gym-exercises', 
-                              'jalon', 'shoulder-press', 'squat']
-        
-        # Initialize counters
+        # Exercise categories 
+        self.exercise_types = ['benchpress', 'deadlift', 'squat']
         self.rep_counter = 20
         self.good_form_streak = 0
         self.last_form_feedback = ""
-        self.model_loaded = False  # Add a flag to track if model was loaded
-        
-        # State tracking for rep counting
-        self.in_good_form = False
-        self.consecutive_good_frames = 0
-        self.consecutive_bad_frames = 0
-        self.rep_started = False
-        
-        # Debug info
-        self.debug_info = {}
 
-        # Try to load the model first
-        self.model = None
+        # Display settings
+        self.display_width = 1280
+        self.display_height = 720
+
+        # Load model
         if model_path and os.path.exists(model_path):
-            loaded_model = load_model_safely(model_path)
-            if loaded_model is not None:
-                self.model = loaded_model
-                self.model_loaded = True
-                print("Model loaded successfully and ready for predictions")
-            else:
-                print("Building new model")
-                self.model = self.build_model()
+            self.model = tf.keras.models.load_model(model_path)
+            print(f"Model loaded from {model_path}")
         else:
-            print("Model path not provided or not found. Using default untrained model.")
+            print("Model path not found. Make sure you've downloaded the model from Colab.")
             self.model = self.build_model()
+            print("Using default untrained model - results will not be accurate without training.")
 
         # Correction feedback templates
         self.correction_templates = {
@@ -154,28 +101,25 @@ class FitnessPostureCorrection:
 
     def build_model(self):
         """Build a model based on MobileNetV2 for exercise classification and form detection"""
-        # Use Input layer with input_shape instead of batch_shape
-        inputs = Input(shape=(224, 224, 3))
-        
         # Base model with pre-trained weights
         base_model = MobileNetV2(
             weights='imagenet',
             include_top=False,
-            input_tensor=inputs
+            input_shape=(224, 224, 3)
         )
 
         # Freeze the base model layers
         base_model.trainable = False
 
         # Create the model
-        x = base_model.output
-        x = GlobalAveragePooling2D()(x)
-        x = Dense(128, activation='relu')(x)
-        x = Dropout(0.5)(x)
-        x = Dense(64, activation='relu')(x)
-        outputs = Dense(len(self.exercise_types), activation='softmax')(x)
-
-        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+        model = Sequential([
+            base_model,
+            GlobalAveragePooling2D(),
+            Dense(128, activation='relu'),
+            Dropout(0.5),
+            Dense(64, activation='relu'),
+            Dense(len(self.exercise_types), activation='softmax')  # Exercise classification
+        ])
 
         # Compile the model
         model.compile(
@@ -188,6 +132,9 @@ class FitnessPostureCorrection:
 
     def analyze_pose(self, frame, exercise_type=None):
         """Analyze pose and provide corrections based on exercise type"""
+        # Create a copy of the frame for drawing
+        display_frame = frame.copy()
+        
         # Convert BGR to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -196,60 +143,37 @@ class FitnessPostureCorrection:
 
         # If pose landmarks were detected
         if results.pose_landmarks:
-            # Draw pose landmarks on frame
+            # Draw pose landmarks on frame with custom styling
             self.mp_drawing.draw_landmarks(
-                frame, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
+                display_frame, 
+                results.pose_landmarks, 
+                self.mp_pose.POSE_CONNECTIONS,
+                landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
+                connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=1)
+            )
 
             # If exercise type not provided, predict it
-            if exercise_type is None and self.model is not None and self.model_loaded:
-                try:
-                    # Preprocess frame for the classification model
-                    resized_frame = cv2.resize(rgb_frame, (224, 224))
-                    preprocessed = preprocess_input(np.expand_dims(resized_frame, axis=0))
+            if exercise_type is None:
+                # Preprocess frame for the classification model
+                resized_frame = cv2.resize(rgb_frame, (224, 224))
+                preprocessed = preprocess_input(np.expand_dims(resized_frame, axis=0))
 
-                    # Predict exercise type
-                    prediction = self.model.predict(preprocessed)
-                    exercise_idx = np.argmax(prediction[0])
-                    exercise_type = self.exercise_types[exercise_idx]
-                    confidence = prediction[0][exercise_idx]
+                # Predict exercise type
+                prediction = self.model.predict(preprocessed)
+                exercise_idx = np.argmax(prediction[0])
+                exercise_type = self.exercise_types[exercise_idx]
+                confidence = prediction[0][exercise_idx]
 
-                    # Display predicted exercise
-                    cv2.putText(frame, f"Exercise: {exercise_type} ({confidence:.2f})",
-                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                except Exception as e:
-                    print(f"Error during exercise prediction: {e}")
-                    # If there's an error, default to a generic exercise type
-                    if exercise_type is None:
-                        exercise_type = 'gym-exercises'
-                        cv2.putText(frame, "Exercise detection unavailable",
-                                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            elif exercise_type is None:
-                # If model is None, default to a generic exercise type
-                exercise_type = 'gym-exercises'
-                cv2.putText(frame, "Exercise detection unavailable",
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            else:
-                # Display manual selected exercise
-                cv2.putText(frame, f"Exercise: {exercise_type}",
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                # Display predicted exercise with better styling
+                cv2.rectangle(display_frame, (10, 10), (300, 40), (0, 0, 0), -1)
+                cv2.putText(display_frame, f"Exercise: {exercise_type} ({confidence:.2f})",
+                            (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
             # Analyze form based on exercise type
             feedback = self.analyze_form(results.pose_landmarks, exercise_type)
-
-            # Display feedback
-            for i, line in enumerate(feedback.split('\n')):
-                cv2.putText(frame, line, (10, 60 + i*30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-
-            # Store the form status
             self.last_form_feedback = feedback
-            
-            return frame, exercise_type
-        else:
-            # No pose detected
-            cv2.putText(frame, "No pose detected", (10, 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            return frame, exercise_type
+
+        return display_frame, exercise_type
 
     def analyze_form(self, landmarks, exercise_type):
         """Analyze exercise form and return corrections with more detail"""
@@ -314,13 +238,10 @@ class FitnessPostureCorrection:
 
         # If no specific errors detected or detailed feedback provided
         if not errors and not detailed_feedback:
-            self.in_good_form = True
             return self.correction_templates[exercise_type]['good']
         elif detailed_feedback:
-            self.in_good_form = False
             return detailed_feedback.strip()
         else:
-            self.in_good_form = False
             return '\n'.join(errors[:2])  # Limit to 2 corrections at a time
 
     def get_angle(self, landmarks, p1, p2, p3):
@@ -333,8 +254,6 @@ class FitnessPostureCorrection:
         bc = c - b
 
         cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-        # Clip the cosine value to the valid range [-1, 1] to avoid numerical errors
-        cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
         angle = np.arccos(cosine_angle)
 
         return np.degrees(angle)
@@ -416,109 +335,83 @@ class FitnessPostureCorrection:
         right_vertical = abs(right_shoulder[0] - right_wrist[0]) < 0.05
 
         return left_vertical and right_vertical
+    
+    def draw_text_with_background(self, img, text, position, font_scale=0.7, color=(255, 255, 255), 
+                                 thickness=2, font=cv2.FONT_HERSHEY_SIMPLEX, bg_color=(0, 0, 0), 
+                                 padding=10, alpha=0.7):
+        """Draw text with semi-transparent background for better readability"""
+        # Get text size
+        text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
+        text_w, text_h = text_size
+        
+        # Calculate background rectangle dimensions
+        rect_x, rect_y = position[0] - padding, position[1] - text_h - padding
+        rect_w, rect_h = text_w + 2 * padding, text_h + 2 * padding
+        
+        # Create overlay for semi-transparent background
+        overlay = img.copy()
+        cv2.rectangle(overlay, (rect_x, rect_y), (rect_x + rect_w, rect_y + rect_h), bg_color, -1)
+        
+        # Apply the overlay with transparency
+        cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+        
+        # Draw text
+        cv2.putText(img, text, (position[0], position[1] - padding), font, font_scale, color, thickness)
+        
+        return img
 
-    def select_exercise(self):
-        """Allow user to select an exercise before starting the webcam"""
-        print("\nFitness Form Analyzer")
-        print("---------------------")
-        print("\nPlease select an exercise type before starting:")
-        
-        for i, ex_type in enumerate(self.exercise_types):
-            print(f"{i+1}. {ex_type}")
-        print("0. Auto-detect exercise")
-        
-        while True:
-            selected = input("\nEnter the number of the exercise type (0 for auto-detection): ")
-            if selected.isdigit():
-                selected = int(selected)
-                if 0 <= selected <= len(self.exercise_types):
-                    if selected == 0:
-                        print("Auto-detecting exercise")
-                        return None
-                    else:
-                        selected_exercise = self.exercise_types[selected-1]
-                        print(f"Selected exercise: {selected_exercise}")
-                        return selected_exercise
-            print("Invalid selection. Please try again.")
-
-    def track_repetition(self, is_good_form):
-        """
-        Improved repetition tracking using state machine logic.
-        Only counts a rep when user maintains good form for multiple consecutive frames.
-        """
-        required_good_frames = 1  # Need 10 consecutive frames of good form to count a rep
-        required_bad_frames = 1   # Need 10 consecutive frames of bad form to reset
-        
-        # Update debug info
-        self.debug_info = {
-            "is_good_form": is_good_form,
-            "consecutive_good_frames": self.consecutive_good_frames,
-            "consecutive_bad_frames": self.consecutive_bad_frames,
-            "rep_started": self.rep_started
-        }
-        
-        if is_good_form:
-            self.consecutive_good_frames += 1
-            self.consecutive_bad_frames = 0
-            
-            # If we have enough consecutive good frames and we've entered the rep
-            if self.consecutive_good_frames >= required_good_frames and self.rep_started:
-                # Count the rep as completed
-                if self.rep_counter > 0:
-                    self.rep_counter -= 1
-                    print(f"Rep completed! {self.rep_counter} remaining.")
-                
-                # Reset for next rep
-                self.rep_started = False
-                self.consecutive_good_frames = 0
-        else:
-            # If form is bad
-            self.consecutive_bad_frames += 1
-            self.consecutive_good_frames = 0
-            
-            # If we have enough consecutive bad frames, reset the rep state
-            if self.consecutive_bad_frames >= required_bad_frames:
-                self.rep_started = True
-                
-        return self.rep_counter
-
-    def run_webcam(self, initial_exercise=None):
-        """Run real-time pose correction on webcam feed in local environment"""
+    def run_webcam(self):
+        """Run real-time pose correction on webcam feed with improved visualization"""
         # Create window with controls
         cv2.namedWindow('Fitness Form Analyzer', cv2.WINDOW_NORMAL)
+        
+        # Create exercise type dropdown
+        exercise_type = None
+        print("Available exercise types:")
+        for i, ex_type in enumerate(self.exercise_types):
+            print(f"{i+1}. {ex_type}")
+        
+        print("0. Auto-detect exercise")
+        
+        selected = input("Enter the number of the exercise type (0 for auto-detection): ")
+        if selected.isdigit():
+            selected = int(selected)
+            if 1 <= selected <= len(self.exercise_types):
+                exercise_type = self.exercise_types[selected-1]
+                print(f"Selected exercise: {exercise_type}")
         
         # Initialize webcam
         cap = cv2.VideoCapture(0)  # Use default camera
         
-        # Set webcam resolution to a lower value for wider view
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # Width
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)  # Height
-        
         # Check if camera opened successfully
         if not cap.isOpened():
-            print("Error: Could not open webcam.")
+            print("Error: Could not open webcam. Make sure your camera is connected and not being used by another application.")
             return
         
-        # Get webcam properties
-        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        exercise_type = initial_exercise
+        # Set webcam properties for better resolution
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        
+        # Get actual webcam properties (may differ from requested)
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        # Set window size to match camera resolution
+        cv2.resizeWindow('Fitness Form Analyzer', actual_width, actual_height)
         
         # Reset counters
         self.rep_counter = 20
         self.good_form_streak = 0
-        self.consecutive_good_frames = 0
-        self.consecutive_bad_frames = 0
-        self.rep_started = True  # Start in a state ready to count reps
         
-        print("\nFitness Form Analyzer Running")
-        print("----------------------------")
+        print("\nFitness Form Analyzer")
+        print("---------------------")
         print("Press 'q' to quit")
         print("Press 'r' to reset rep counter")
         print("Press 's' to switch exercise (will prompt in console)")
-        print("Press 'd' to toggle debug info")
+        print("Press 'f' to toggle fullscreen")
         
-        show_debug = False
+        # Track if we're in fullscreen mode
+        fullscreen_mode = False
         
         while True:
             # Capture frame
@@ -527,87 +420,97 @@ class FitnessPostureCorrection:
                 print("Error: Failed to capture frame. Camera might be disconnected.")
                 break
             
-            try:
-                # Analyze the frame
-                processed_frame, detected_exercise = self.analyze_pose(frame, exercise_type)
-                
-                # Get feedback
-                landmarks = None
-                feedback = "No pose detected"
-                
-                if detected_exercise:
-                    landmarks = self.pose.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).pose_landmarks
-                    if landmarks:
-                        feedback = self.analyze_form(landmarks, detected_exercise)
-                        
-                        # Update rep counter with improved tracking
-                        is_good_form = feedback == self.correction_templates[detected_exercise]['good']
-                        self.track_repetition(is_good_form)
-                
-                # Add rep counter to the frame
-                cv2.rectangle(processed_frame, (frame_width-180, 10), (frame_width-10, 80), (0, 0, 0), -1)
-                cv2.putText(processed_frame, f"Reps left: {self.rep_counter}", 
-                            (frame_width-170, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-                
-                # Add feedback box at the bottom
-                cv2.rectangle(processed_frame, (10, frame_height-80), (frame_width-10, frame_height-10), (0, 0, 0), -1)
-                
-                # Determine feedback color
-                feedback_color = (255, 255, 255)  # Default white
-                if "Good" in feedback:
-                    feedback_color = (0, 255, 0)  # Green for good form
-                elif any(error in feedback for error in ['incorrect', 'too', 'not']):
-                    feedback_color = (0, 0, 255)  # Red for corrections
-                
-                # Display feedback text
-                cv2.putText(processed_frame, feedback, 
-                            (20, frame_height-40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, feedback_color, 2)
-                
-                # Show debug info if enabled
-                if show_debug:
-                    debug_y = 120
-                    cv2.putText(processed_frame, f"Good form: {self.in_good_form}", 
-                                (10, debug_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                    cv2.putText(processed_frame, f"Consecutive good frames: {self.consecutive_good_frames}", 
-                                (10, debug_y+30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                    cv2.putText(processed_frame, f"Consecutive bad frames: {self.consecutive_bad_frames}", 
-                                (10, debug_y+60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                    cv2.putText(processed_frame, f"Rep started: {self.rep_started}", 
-                                (10, debug_y+90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                    cv2.putText(processed_frame, f"Model loaded: {self.model_loaded}", 
-                                (10, debug_y+120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                
-                # Display the frame
-                cv2.imshow('Fitness Form Analyzer', processed_frame)
+            # Resize frame if needed to fit display
+            if frame.shape[1] != self.display_width or frame.shape[0] != self.display_height:
+                frame = cv2.resize(frame, (self.display_width, self.display_height))
             
-            except Exception as e:
-                print(f"Error processing frame: {e}")
-                cv2.putText(frame, "Error processing frame", 
-                        (20, frame_height//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                cv2.imshow('Fitness Form Analyzer', frame)
+            # Analyze the frame
+            processed_frame, detected_exercise = self.analyze_pose(frame, exercise_type)
+            
+            # Get feedback
+            landmarks = None
+            feedback = "No pose detected"
+            
+            if detected_exercise:
+                landmarks = self.pose.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).pose_landmarks
+                if landmarks:
+                    feedback = self.analyze_form(landmarks, detected_exercise)
+                    
+                    # Update rep counter if form is good
+                    if feedback == self.correction_templates[detected_exercise]['good']:
+                        self.good_form_streak += 1
+                        if self.good_form_streak >= 3:  # Need 10 frames of good form to count as a rep
+                            if self.rep_counter > 0:
+                                self.rep_counter -= 1
+                            self.good_form_streak = 0
+                    else:
+                        self.good_form_streak = 0
+            
+            # Create a stylish UI overlay
+            # 1. Add semi-transparent top bar
+            overlay = processed_frame.copy()
+            cv2.rectangle(overlay, (0, 0), (self.display_width, 80), (40, 40, 40), -1)
+            cv2.addWeighted(overlay, 0.7, processed_frame, 0.3, 0, processed_frame)
+            
+            # 2. Add exercise type and rep counter
+            exercise_text = f"Exercise: {detected_exercise if detected_exercise else 'Auto-detect'}"
+            cv2.putText(processed_frame, exercise_text, (20, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+            
+            # Add rep counter with colored background
+            rep_text = f"Reps left: {self.rep_counter}"
+            rep_color = (50, 205, 50) if self.rep_counter > 5 else (0, 0, 255)  # Green if > 5, else red
+            rep_bg = (30, 60, 30) if self.rep_counter > 5 else (60, 30, 30)
+            
+            # Get text size for centering
+            (text_width, text_height), _ = cv2.getTextSize(rep_text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
+            rep_x = self.display_width - text_width - 30
+            
+            # Draw rep counter with background
+            cv2.rectangle(processed_frame, (rep_x - 10, 10), (rep_x + text_width + 10, 60), rep_bg, -1)
+            cv2.putText(processed_frame, rep_text, (rep_x, 45), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, rep_color, 2)
+            
+            # 3. Add feedback panel at bottom
+            overlay = processed_frame.copy()
+            cv2.rectangle(overlay, (0, self.display_height - 100), 
+                         (self.display_width, self.display_height), (40, 40, 40), -1)
+            cv2.addWeighted(overlay, 0.7, processed_frame, 0.3, 0, processed_frame)
+            
+            # Determine feedback color
+            feedback_color = (255, 255, 255)  # Default white
+            if "Good" in feedback:
+                feedback_color = (0, 255, 0)  # Green for good form
+            elif any(error in feedback for error in ['incorrect', 'too', 'not']):
+                feedback_color = (0, 100, 255)  # Orange for corrections
+            
+            # Display feedback text with nice formatting
+            cv2.putText(processed_frame, "FORM FEEDBACK:", 
+                        (20, self.display_height - 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+            
+            cv2.putText(processed_frame, feedback, 
+                        (20, self.display_height - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, feedback_color, 2)
+            
+            # Add controls guide at bottom right
+            controls_text = "Q: Quit | R: Reset | S: Switch | F: Fullscreen"
+            cv2.putText(processed_frame, controls_text, 
+                        (self.display_width - 400, self.display_height - 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+            
+            # Display the frame
+            cv2.imshow('Fitness Form Analyzer', processed_frame)
             
             # Check for key presses
             key = cv2.waitKey(1) & 0xFF
             
             # 'q' to quit
-            if key == ord('q') or cv2.getWindowProperty("Fitness Form Analyzer", cv2.WND_PROP_VISIBLE) < 1:
+            if key == ord('q'):
                 break
             
             # 'r' to reset rep counter
             elif key == ord('r'):
                 self.rep_counter = 20
-                self.rep_started = True  # Ensure it starts tracking again
                 print("Rep counter reset to 20")
-
-                # Force immediate UI update
-                cv2.rectangle(processed_frame, (frame_width-180, 10), (frame_width-10, 80), (0, 0, 0), -1)
-                cv2.putText(processed_frame, f"Reps left: {self.rep_counter}", 
-                            (frame_width-170, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-            
-            # 'd' to toggle debug info
-            elif key == ord('d'):
-                show_debug = not show_debug
-                print(f"Debug info: {'ON' if show_debug else 'OFF'}")
             
             # 's' to switch exercise
             elif key == ord('s'):
@@ -626,6 +529,14 @@ class FitnessPostureCorrection:
                         else:
                             exercise_type = self.exercise_types[selected-1]
                             print(f"Selected exercise: {exercise_type}")
+            
+            # 'f' to toggle fullscreen
+            elif key == ord('f'):
+                fullscreen_mode = not fullscreen_mode
+                if fullscreen_mode:
+                    cv2.setWindowProperty('Fitness Form Analyzer', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                else:
+                    cv2.setWindowProperty('Fitness Form Analyzer', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
         
         # Release resources
         cap.release()
@@ -634,30 +545,13 @@ class FitnessPostureCorrection:
 
 def main():
     # Path to the model downloaded from Colab
-    model_path = "model/fitness_posture_model.keras"
+    model_path = "fitness_posture_model.keras"
 
     # Create and initialize the fitness posture correction system
     fitness_app = FitnessPostureCorrection(model_path)
 
-    # Check for command-line arguments
-    if len(sys.argv) > 1:
-        exercise_type = sys.argv[1]
-        # Validate the exercise type
-        if exercise_type in fitness_app.exercise_types or exercise_type == 'auto':
-            if exercise_type == 'auto':
-                initial_exercise = None
-            else:
-                initial_exercise = exercise_type
-            print(f"Starting with exercise: {exercise_type}")
-        else:
-            print(f"Invalid exercise type: {exercise_type}")
-            initial_exercise = fitness_app.select_exercise()
-    else:
-        # If no arguments, allow user to select exercise
-        initial_exercise = fitness_app.select_exercise()
-
-    # Start the webcam analysis with the selected exercise
-    fitness_app.run_webcam(initial_exercise)
+    # Start the webcam analysis
+    fitness_app.run_webcam()
 
 
 if __name__ == "__main__":
