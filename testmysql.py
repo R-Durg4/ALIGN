@@ -25,7 +25,7 @@ except Exception as e:
 @app.route("/")
 def home():
     try:
-        cur = mysql.connection.cursor()
+        cur = conn.cursor(dictionary=True)
         cur.execute("SELECT 1")  # Test query
         cur.close()
         return "✅ MySQL is working in Flask!"

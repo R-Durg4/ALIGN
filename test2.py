@@ -23,7 +23,7 @@ mysql = MySQL(app)
 app.mysql = mysql  # new line: expose mysql to other modules
 
 with app.app_context():
-    cur = mysql.connection.cursor()
+    cur = conn.cursor(dictionary=True)
     # Drop table if exists
     #cur.execute("DROP TABLE IF EXISTS users")
     mysql.connection.commit()
@@ -50,7 +50,7 @@ def validate_login():
     username = data.get('username')
     password = data.get('password')
     
-    cur = mysql.connection.cursor()
+    cur = conn.cursor(dictionary=True)
     try:
         # Check if credentials exist in database
         cur.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
@@ -79,7 +79,7 @@ def create_account():
             flash('Please fill in all fields!', 'error')
             return render_template('create_account.html')
         
-        cur = mysql.connection.cursor()
+        cur = conn.cursor(dictionary=True)
         try:
             # Check if username already exists
             cur.execute("SELECT * FROM users WHERE username = %s", (username,))
