@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Progress</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-image: url("{{ url_for('static', filename='homepage.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: rgb(101, 11, 11);
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 50px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            color: black;
+        }
+
+        h2, h4, h6 {
+            text-align: center;
+            color: rgb(101, 11, 11);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        thead {
+            background-color: rgb(108,11,11);
+            color: white;
+        }
+
+        .btn-custom {
+            padding: 10px 20px;
+            background-color: rgb(108,11,11);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-custom:hover {
+            background-color: rgb(88, 8, 8);
+        }
+
+        .chart-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>    
+</head>
+<body>
+
+    <div class="container">
+        <h2>Workout Progress</h2>
+
+        {% if progress_data %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>User ID</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration (mins)</th>
+                            <th>Rep Count</th>
+                            <th>Accuracy (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for progress in progress_data %}
+                        <tr>
+                            <td>{{ progress.id }}</td>
+                            <td>{{ progress.user_id }}</td>
+                            <td>{{ progress.start_time }}</td>
+                            <td>{{ progress.end_time }}</td>
+                            <td>{{ progress.duration }}</td>
+                            <td>{{ progress.repcount }}</td>
+                            <td>{{ progress.accuracy }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Charts -->
+            <div class="mt-5">
+                <h4 class="text-center mb-4">Workout Trends</h4>
+                
+                <!-- Rep Count Line Chart -->
+                <div class="mb-5">
+                    <h6 class="text-center">Repetition Count Over Sessions</h6>
+                    <canvas id="repChart" height="100"></canvas>
+                </div>
+
+                <!-- Accuracy Line Chart -->
+                <div class="mb-5">
+                    <h6 class="text-center">Form Accuracy Over Sessions</h6>
+                    <canvas id="accuracyChart" height="100"></canvas>
+                </div>
+            </div>
+
+        {% else %}
+            <p class="text-center text-muted">No progress data available.</p>
+        {% endif %}
+        
+        <div class="text-center mt-3">
+            <a href="{{ url_for('main_menu') }}" class="btn btn-primary">Back to Main Menu</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = {{ progress_data|map(attribute='id')|list }};
+    const repData = {{ progress_data|map(attribute='repcount')|list }};
+    const accuracyData = {{ progress_data|map(attribute='accuracy')|list }};
+
+    // Reps Chart
+    new Chart(document.getElementById('repChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Repetition Count',
+                data: repData,
+                fill: false,
+                borderColor: 'rgb(101, 11, 11)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Reps'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Session ID'
+                    }
+                }
+            }
+        }
+    });
+
+    // Accuracy Chart
+    new Chart(document.getElementById('accuracyChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Accuracy (%)',
+                data: accuracyData,
+                fill: false,
+                borderColor: 'rgb(101, 11, 11)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Accuracy (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Session ID'
+                    }
+                }
+            }
+        }
+    });
+</script>
+</html>

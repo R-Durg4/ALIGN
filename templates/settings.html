@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url("{{ url_for('static', filename='homepage.jpg') }}");
+            background-size: cover;
+            background-position: top center;
+            background-attachment: auto;
+            background-repeat: repeat;
+            background-color: rgb(8, 8, 8);
+        }
+
+        h2 {
+            text-align: center;
+            color: white;
+            font-size: 50px; /* Increased size */
+            margin-bottom: 10px;
+        }
+
+        h4 {
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            margin-bottom: 20px; /* Added spacing below */
+        }
+
+        #loginForm {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        #loginForm input[type="text"], 
+        #loginForm input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #loginForm input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: none;
+            background-color: rgb(108,11,11);
+            color: white;
+            cursor: pointer;
+        }
+
+        #loginForm input[type="submit"]:hover {
+            background-color: rgb(108,11,11);
+        }
+
+        #loginForm a {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h2>Update Your Profile</h2>
+    <form method="POST", id="loginForm">
+        <label>Full Name:</label>
+        <input type="text" name="full_name" value="{{ user.full_name or '' }}" required>
+
+        <label>Country Code:</label>
+        <select name="country_code" required>
+            <option value="+1" {% if user.country_code == '+1' %}selected{% endif %}>🇺🇸 +1 (USA)</option>
+            <option value="+44" {% if user.country_code == '+44' %}selected{% endif %}>🇬🇧 +44 (UK)</option>
+            <option value="+91" {% if user.country_code == '+91' %}selected{% endif %}>🇮🇳 +91 (India)</option>
+            <option value="+61" {% if user.country_code == '+61' %}selected{% endif %}>🇦🇺 +61 (Australia)</option>
+            <option value="+81" {% if user.country_code == '+81' %}selected{% endif %}>🇯🇵 +81 (Japan)</option>
+        </select><br><br>
+
+        <label>Phone Number:</label>
+        <input type="text" name="phone" value="{{ user.phone or '' }}" pattern="[0-9]{7,15}" title="Enter a valid phone number (7-15 digits)" required>
+
+        <label>Gender:</label>
+        <select name="gender">
+            <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+        <br><br>
+        <!--label>Date of Birth:</label>
+        <input type="date" name="dob" value="{{ user.dob or '' }}" required-->
+        <br><br>
+        <label>Profile Picture:</label>
+        <input type="file" name="profile_picture" accept="image/*" onchange="previewImage(event)"><br><br>
+        <img id="preview" src="{{ url_for('static', filename=user.profile_picture if user.profile_picture else 'profile_pics/default.png') }}"
+            alt="Profile Picture Preview"
+            style="width: 100px; height: 100px; border-radius: 50%;">
+        <script>
+            function previewImage(event) {
+                var preview = document.getElementById('preview');
+                preview.src = URL.createObjectURL(event.target.files[0]);
+                preview.style.display = 'block';
+            }
+        </script>
+        <br><br>
+
+        <label>New Username:</label>
+        <input type="text" name="username" value="{{ user.username }}" required>
+
+        <br>
+        <label>New Password:</label>
+        <input type="password" name="password" placeholder="Leave blank to keep current password">
+
+        <button type="submit">Update Profile</button>
+    </form>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                        {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

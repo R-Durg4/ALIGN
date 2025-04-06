@@ -10,7 +10,7 @@
             background-image: url("{{ url_for('static', filename='homepage.jpg') }}");
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
+            background-attachment: scroll;
             background-repeat: no-repeat;
             font-family: 'IBM Plex Sans', sans-serif;
             font-size: 18px;
@@ -82,6 +82,13 @@
             background-color: rgb(150, 20, 20);
             transform: scale(1.05);
         }
+        .profile-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
     </style>
 </head>
 <body>
@@ -95,12 +102,20 @@
         exist are the ones you refuse to challenge. Keep pushing forward—your 
         future self will thank you!
     </h3>
-
+    <!-- added for profile image-->
+    {% if user and user.profile_picture %}
+        <img src="{{ url_for('static', filename=user.profile_picture|escape) }}" alt="Profile Picture" class="profile-icon">
+    {% else %}
+        <img src="{{ url_for('static', filename=default_profile_picture) }}" alt="Profile Picture" class="profile-icon">
+    {% endif %}
+    <!-- end profile image section-->
     <a href="{{ url_for('select_exercise') }}" class="menu-button">SELECT EXERCISE</a>
-    <a href="#" class="menu-button">VIEW PROGRESS</a>
-    <a href="#" class="menu-button">SETTINGS</a>
+    <a href="{{ url_for('settings') }}" class="menu-button">UPDATE PROFILE</a>
+    <a href="{{ url_for('view_profile') }}" class="menu-button">VIEW PROFILE</a>
+    <a href="{{ url_for('view_progress') }}" class="menu-button">VIEW PROGRESS</a>
     <a href="{{ url_for('login') }}" class="menu-button">LOGOUT</a>
 
+    
     <script>
         // Scroll effect for motivational text
         document.addEventListener("DOMContentLoaded", function() {
