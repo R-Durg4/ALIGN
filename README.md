@@ -37,7 +37,9 @@
 ### 1. Clone the Repository
 -Clone the repository
 ### 2. Set Project Directory
--cd ALIGN
+```bash
+cd ALIGN
+```
 ### 3. Set up the dependencies
 Create a virtual environment venv and activate it
 Install dependencies using 
@@ -49,7 +51,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-
+</details>
 🎯 Use Case: Powerlifting Meets AI
 ALIGN is tailored for powerlifters performing complex, heavy lifts like:
 
