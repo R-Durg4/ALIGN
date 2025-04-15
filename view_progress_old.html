@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Progress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container {
+            width: 80%;
+            margin: auto;
+            text-align: center;
+        }
+        .insights {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .stat-box {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f4f4f4;
+            width: 30%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Workout Progress</h2>
+        
+        <!-- Insights Section -->
+        <div class="insights">
+            <div class="stat-box">Total Workouts: <span id="totalWorkouts">0</span></div>
+            <div class="stat-box">Total Time Spent: <span id="totalTime">0</span> mins</div>
+            <div class="stat-box">Improvement: <span id="improvement">0</span>%</div>
+        </div>
+        
+        <!-- Progress Chart -->
+        <canvas id="progressChart" width="400" height="200"></canvas>
+        
+        <!-- Individual Exercise Stats -->
+        <div class="stats">
+            <div class="stat-box">Squats Time: <span id="squatsTime">0</span> mins</div>
+            <div class="stat-box">Deadlifts Time: <span id="deadliftsTime">0</span> mins</div>
+            <div class="stat-box">Bench Press Time: <span id="benchPressTime">0</span> mins</div>
+        </div>
+    </div>
+
+    <script>
+        function fetchProgressData() {
+            fetch('/api/progress')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert("No progress data available.");
+                        return;
+                    }
+
+                    // Update insights
+                    document.getElementById("totalWorkouts").textContent = data.progress.total_workouts;
+                    document.getElementById("totalTime").textContent = data.progress.total_time;
+                    document.getElementById("improvement").textContent = data.progress.improvement;
+
+                    // Update individual exercise stats
+                    document.getElementById("squatsTime").textContent = data.progress.squats_time;
+                    document.getElementById("deadliftsTime").textContent = data.progress.deadlifts_time;
+                    document.getElementById("benchPressTime").textContent = data.progress.benchpress_time;
+
+                    // Update chart
+                    const ctx = document.getElementById('progressChart').getContext('2d');
+                    const chartData = {
+                        labels: data.progress.dates,
+                        datasets: [{
+                            label: 'Workouts Completed',
+                            data: data.progress.workouts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2
+                        }]
+                    };
+
+                    // If the chart already exists, update it
+                    if (window.progressChart) {
+                        window.progressChart.data = chartData;
+                        window.progressChart.update();
+                    } else {
+                        window.progressChart = new Chart(ctx, {
+                            type: 'line',
+                            data: chartData
+                        });
+                    }
+                })
+                .catch(error => console.error("Error loading progress data:", error));
+        }
+
+        // Fetch progress data every 5 seconds
+        setInterval(fetchProgressData, 5000);
+        // Initial fetch
+        fetchProgressData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Progress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Workout Progress</h1>
+    <div class="stats">
+        <div><strong>Total Workouts:</strong> <span id="totalWorkouts">0</span></div>
+        <div><strong>Total Time:</strong> <span id="totalTime">0</span> mins</div>
+        <div><strong>Improvement:</strong> <span id="improvement">0%</span></div>
+    </div>
+    <div class="chart-container">
+        <canvas id="progressChart"></canvas>
+    </div>
+    <script>
+        async function fetchProgress() {
+            const response = await fetch("/api/progress");
+            const data = await response.json();
+            
+            document.getElementById("totalWorkouts").textContent = data.total_workouts;
+            document.getElementById("totalTime").textContent = data.total_time;
+            document.getElementById("improvement").textContent = data.improvement + "%";
+            
+            const ctx = document.getElementById("progressChart").getContext("2d");
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: "Workouts per Day",
+                        data: data.workouts,
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                }
+            });
+        }
+        fetchProgress();
+    </script>
+</body>
+</html>
