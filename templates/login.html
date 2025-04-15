@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Page</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url("{{ url_for('static', filename='homepage.jpg') }}");
+            background-size: cover;
+            background-position: top center;
+            background-attachment: auto;
+            background-repeat: no-repeat;
+            background-color: rgb(8, 8, 8);
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 50px; /* Increased size */
+            margin-bottom: 10px;
+        }
+
+        h4 {
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            margin-bottom: 20px; /* Added spacing below */
+        }
+
+        #loginForm {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        #loginForm input[type="text"], 
+        #loginForm input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #loginForm input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: none;
+            background-color: rgb(108,11,11);
+            color: white;
+            cursor: pointer;
+        }
+
+        #loginForm input[type="submit"]:hover {
+            background-color: rgb(108,11,11);
+        }
+
+        #loginForm a {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>ALIGN</h1>
+    <h4>Log in to your account</h4>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password">
+        <input type="submit" value="Submit">
+        <a href="/create_account">Don't have an account? REGISTER</a>
+    </form>
+
+    <script src="static/login.js"></script>
+</body>
+</html>

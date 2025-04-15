@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise Session</title>
+    <!--link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}"-->
+    <style>
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
+        }
+        /* Set background image */
+        body {
+            background-image: url("{{ url_for('static', filename='homepage.jpg') }}");
+            background-size: cover;
+            background-position: top center;
+            background-attachment: auto;
+            background-repeat: no-repeat;
+            text-align: center;
+            font-family: topaz;
+            font-size: 18px;
+            color: white;
+            margin: 0;
+            padding: 0;
+
+        }
+
+        /* Style for the message button */
+        .message-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color:rgb(128, 11, 11);
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 20px auto;
+            display: block;
+            width: fit-content;
+        }
+
+        .message-button:hover {
+            background-color: darkred;
+        }
+
+        .reset-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #d9534f;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .reset-button:hover {
+            background-color: #c9302c;
+        }
+
+        /* Style for the controls */
+        .controls {
+            margin: 20px;
+            margin-top: 120px;
+        }
+
+        .side-container {
+            margin-top: 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+
+        }
+
+        .instruction-box {
+            width: 50%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid white;
+            border-radius: 10px;
+            margin: 20px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        .bottom-nav {
+            text-align: center;
+            padding: 20px;
+        }
+        .center-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .menu-button {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: rgb(108, 11, 11);
+            color: white;
+            font-size: 16px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .menu-button:hover {
+            background-color: darkred;
+        }
+    </style>
+    <script>
+        function resetCounter() {
+            fetch('/reset_counter', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the rep counter display to 20
+                        document.getElementById('repCounter').innerText = "20";
+                        alert("Rep counter reset to 20!");
+                    } else {
+                        alert("Failed to reset counter.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error resetting counter:", error);
+                    alert("An error occurred while resetting the counter.");
+                });
+        }
+    </script>
+    
+</head>
+<body>
+    <h1>Exercise Session Started</h1>
+
+    <a href="#" class="message-button">Your exercise program is running in a new window. Please check your system for the exercise window.</a>
+    <div class="center-container">
+        <div class="instruction-box">
+            <p><strong>TO RESET REP COUNTER</strong></p><p> TYPE <kbd>r</kbd> IN YOUR EXERCISE WINDOW</p>
+        </div>
+    </div>    
+
+    <div class="controls">
+        <a href="{{ url_for('main_menu') }}" class="menu-button">Back to Main Menu</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Exercise</title>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+            background-color: rgb(9, 9, 9);
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            padding-top: 20px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 42px;
+            font-family: topaz;
+            text-transform: uppercase;
+            text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .exercise-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px 0;
+            font-size: 18px;
+            font-family: topaz;
+
+        }
+        .exercise-card {
+            background: rgb(108, 11, 11);
+            padding: 20px;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 45%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .exercise-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-card h3 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .motivation {
+            width: 45%;
+            color: white;
+            font-size: 22px;
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .quote {
+            width: 45%;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-style: italic;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: rgb(108, 11, 11);
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: rgb(168, 24, 24);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .exercise-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .exercise-card, .motivation {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Select Exercise</h1>
+
+    <div class="exercise-container">
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='benchpress') }}'">
+            <img src="{{ url_for('static', filename='benchpress.png') }}" alt="Bench Press">
+            <h3>Bench Press</h3>
+        </div>
+        <div class="quote">
+            <p>The bench press is a key compound movement in powerlifting that targets the chest, shoulders, and triceps, improving upper body strength and pushing power. To perform it, lie flat on a bench with your feet planted firmly, grip the bar slightly wider than shoulder-width, and unrack it to hold it above your chest. Lower the bar in a controlled motion until it touches your chest, then press it back up explosively to full arm extension. This exercise primarily works the pectoralis major, while also engaging the anterior deltoids and triceps brachii. For powerlifters, the bench press is essential for developing explosive strength, improving lockout power, and enhancing overall pressing endurance, which translates to better performance in other lifts like the overhead press.</p>
+        </div>
+    </div>
+
+    <div class="exercise-container">
+        <div class="quote">
+            <p>The deadlift is a powerhouse movement in powerlifting that primarily targets the posterior chain, including the hamstrings, glutes, lower back, and traps, while also engaging the core and grip strength. To perform a deadlift, stand with your feet hip-width apart, grip the barbell just outside your knees, and hinge at the hips while keeping your back straight. Drive through your heels, extend your hips, and pull the bar upward until you are fully upright, then lower it back to the ground in a controlled manner. Deadlifts are essential for building raw strength, explosive power, and total-body stability, making them a key lift for powerlifters aiming to increase overall strength, enhance athletic performance, and develop a strong, resilient posterior chain.</p>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='deadlift') }}'">
+            <img src="{{ url_for('static', filename='deadlift.png') }}" alt="Deadlift">
+            <h3>Deadlift</h3>
+        </div>
+    </div>
+
+    <div class="exercise-container">
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='squat') }}'">
+            <img src="{{ url_for('static', filename='squat.png') }}" alt="Squat">
+            <h3>Squat</h3>
+        </div>
+        <div class="quote">
+            <p>The squat is a fundamental lower-body exercise in powerlifting that primarily targets the quadriceps, hamstrings, and glutes, while also engaging the core and lower back for stability. To perform a squat, position the barbell across your upper back, stand with your feet shoulder-width apart, and brace your core. Lower yourself by bending at the hips and knees until your thighs are at least parallel to the ground, then drive through your heels to return to a standing position. Squats build explosive leg strength, core stability, and overall power, making them crucial for powerlifters aiming to improve their lower-body strength, enhance athletic performance, and develop better control over heavy lifts.</p>
+        </div>
+    </div>
+
+    <a href="{{ url_for('main_menu') }}" class="back-button">Back to Main Menu</a>
+
+</body>
+</html>

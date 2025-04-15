@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Exercise</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .exercise-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .exercise-card img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-card h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .auto-detect {
+            grid-column: span 3;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .auto-detect:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Select Exercise Type</h1>
+    <div class="exercise-grid">
+        <div class="exercise-card auto-detect" onclick="location.href='{{ url_for('start_exercise', exercise_type='auto') }}'">
+            <h3>Auto-Detect Exercise</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='benchpress') }}'">
+            <h3>Bench Press</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='deadlift') }}'">
+            <h3>Deadlift</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='gym-exercises') }}'">
+            <h3>Gym Exercises</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='jalon') }}'">
+            <h3>Jalon</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='shoulder-press') }}'">
+            <h3>Shoulder Press</h3>
+        </div>
+        <div class="exercise-card" onclick="location.href='{{ url_for('start_exercise', exercise_type='squat') }}'">
+            <h3>Squat</h3>
+        </div>
+    </div>
+    <a href="{{ url_for('main_menu') }}" class="back-button">Back to Main Menu</a>
+</body>
+</html>
