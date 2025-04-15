@@ -23,10 +23,6 @@
 
 ---
 
-<details>
-<summary>📦 Project Structure</summary>
-</details>
-
 ---
 
 ## 🚀 Getting Started
