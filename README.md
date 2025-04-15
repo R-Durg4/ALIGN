@@ -46,6 +46,10 @@ python app.py
 ```
 
 </details>
+
+---
+
+
 🎯 Use Case: Powerlifting Meets AI
 ALIGN is tailored for powerlifters performing complex, heavy lifts like:
 
