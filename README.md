@@ -50,7 +50,7 @@ python app.py
 ---
 
 
-##🎯 Use Case
+## 🎯 Use Case
 Powerlifting Meets AI
 ALIGN is tailored for powerlifters performing complex, heavy lifts like:
 
@@ -62,5 +62,5 @@ ALIGN is tailored for powerlifters performing complex, heavy lifts like:
 
 Proper form is critical. ALIGN acts as your AI spotter, catching posture deviations before they cause injuries.
 
-
+---
 
