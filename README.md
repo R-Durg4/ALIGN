@@ -50,7 +50,8 @@ python app.py
 ---
 
 
-🎯 Use Case: Powerlifting Meets AI
+##🎯 Use Case
+Powerlifting Meets AI
 ALIGN is tailored for powerlifters performing complex, heavy lifts like:
 
 🏋️ Squats
