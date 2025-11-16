@@ -26,8 +26,8 @@ app = Flask(__name__)
 
 # ✅ MySQL Configuration
 app.config['MYSQL_HOST'] = 'localhost'  # Use 'localhost' if 127.0.0.1 fails
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Durga@0360'
+app.config['MYSQL_USER'] = ''
+app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'fitness'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Enables dictionary output for queries
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -43,7 +43,7 @@ conn = get_mysql_connection()
 
 mysql=MySQL(app)  # Initialize MySQL correctly #remove if any error occurs
 
-# ✅ Ensure MySQL Connection Works
+#  Ensure MySQL Connection Works
 try:
     cur = conn.cursor(dictionary=True)  # Use dictionary format for queries
     cur.execute("SELECT VERSION()")
@@ -53,7 +53,7 @@ try:
 except Exception as e:
     print(f"❌ Failed to connect to MySQL.\n⚠️ Error: {e}")
 
-# ✅ Check MySQL Connection Before Each Request
+#  Check MySQL Connection Before Each Request
 @app.before_request
 def check_mysql_connection():
     try:
@@ -64,7 +64,7 @@ def check_mysql_connection():
     except Exception as e:
         print(f"⚠️ MySQL connection error: {e}")
 
-# ✅ Ensure Table Exists
+# Ensure Table Exists
 with app.app_context():
     try:
         cur = conn.cursor(dictionary=True)  # Use dictionary format for queries
@@ -390,4 +390,5 @@ def view_progress():
 
 
 if __name__ == '__main__':
+
     app.run(debug=True)
